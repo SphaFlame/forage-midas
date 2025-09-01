@@ -1,5 +1,6 @@
 package com.jpmc.midascore.Service;
 
+import com.jpmc.midascore.Service.IncentiveService;
 import com.jpmc.midascore.entity.TransactionRecord;
 import com.jpmc.midascore.entity.UserRecord;
 import com.jpmc.midascore.foundation.Transaction;
@@ -21,6 +22,9 @@ public class TransactionService {
 
     @Autowired
     private TransactionRecordRepository transactionRecordRepository;
+
+    @Autowired
+    private IncentiveService incentiveService;
 
     @Transactional
     public boolean processTransaction(Transaction transaction) {
@@ -53,9 +57,15 @@ public class TransactionService {
             return false;
         }
 
+        // Call incentive API after validation but before balance updates
+        float incentiveAmount = incentiveService.getIncentive(transaction);
+        logger.info("Incentive amount for transaction: {}", incentiveAmount);
+
         // Update balances
+        // Sender: subtract transaction amount only (no incentive deduction)
         float newSenderBalance = sender.getBalance() - transaction.getAmount();
-        float newRecipientBalance = recipient.getBalance() + transaction.getAmount();
+        // Recipient: add transaction amount + incentive
+        float newRecipientBalance = recipient.getBalance() + transaction.getAmount() + incentiveAmount;
 
         sender.setBalance(newSenderBalance);
         recipient.setBalance(newRecipientBalance);
@@ -64,12 +74,12 @@ public class TransactionService {
         userRepository.save(sender);
         userRepository.save(recipient);
 
-        // Create and save transaction record
-        TransactionRecord record = new TransactionRecord(sender, recipient, transaction.getAmount());
+        // Create and save transaction record with incentive
+        TransactionRecord record = new TransactionRecord(sender, recipient, transaction.getAmount(), incentiveAmount);
         transactionRecordRepository.save(record);
 
-        logger.info("Transaction completed. Sender: {} (balance: {}), Recipient: {} (balance: {})",
-                sender.getName(), newSenderBalance, recipient.getName(), newRecipientBalance);
+        logger.info("Transaction completed. Sender: {} (balance: {}), Recipient: {} (balance: {}), Incentive: {}",
+                sender.getName(), newSenderBalance, recipient.getName(), newRecipientBalance, incentiveAmount);
 
         return true;
     }

@@ -21,6 +21,9 @@ public class TransactionRecord {
     @Column(name = "amount", nullable = false)
     private float amount;
 
+    @Column(name = "incentive", nullable = false)
+    private float incentive = 0.0f;
+
     @Column(name = "status", nullable = false)
     private String status = "COMPLETED";
 
@@ -30,6 +33,15 @@ public class TransactionRecord {
         this.sender = sender;
         this.recipient = recipient;
         this.amount = amount;
+        this.status = "COMPLETED";
+        this.incentive = 0.0f;
+    }
+
+    public TransactionRecord(UserRecord sender, UserRecord recipient, float amount, float incentive) {
+        this.sender = sender;
+        this.recipient = recipient;
+        this.amount = amount;
+        this.incentive = incentive;
         this.status = "COMPLETED";
     }
 
@@ -46,12 +58,15 @@ public class TransactionRecord {
     public float getAmount() { return amount; }
     public void setAmount(float amount) { this.amount = amount; }
 
+    public float getIncentive() { return incentive; }
+    public void setIncentive(float incentive) { this.incentive = incentive; }
+
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
 
     @Override
     public String toString() {
-        return String.format("TransactionRecord[id=%d, senderId=%d, recipientId=%d, amount=%f, status=%s]",
-                id, sender.getId(), recipient.getId(), amount, status);
+        return String.format("TransactionRecord[id=%d, senderId=%d, recipientId=%d, amount=%f, incentive=%f, status=%s]",
+                id, sender.getId(), recipient.getId(), amount, incentive, status);
     }
 }
